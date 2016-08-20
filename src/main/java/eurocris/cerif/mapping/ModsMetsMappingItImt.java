@@ -1,51 +1,28 @@
 package eurocris.cerif.mapping;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
+import java.util.List;
 
 import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.commons.lang.StringUtils;
-import org.w3c.dom.CDATASection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import eurocris.oaipmh.XmlUtil;
 
+
 /**
  * @author Nuno
  *
- *	General mappings to CERIF applicable to most uses of MODS.
- *  This class is adapted to the case when MODS is embedded in METS metadata
+ *  This class is adapted to the case of University of Navarra
  */
-public abstract class ModsMetsMapping extends CerifMapping{
-	public static final Pattern URL_PATTERN=Pattern.compile("^(https?:\\/\\/)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([\\/\\w \\.-]*)*\\/?$");
-	public static final String[] CF_RES_PUBL_ELEMENTS_ORDER=new String[] {
-			"cfResPublDate", "cfNum", "fVol", 
-			"cfEdition", "cfSeries", "cfIssue", 
-			"cfStartPage", "cfEndPage", "cfTotalPages", 
-			"cfISBN", "cfISSN", "cfURI"};
-//	<xs:sequence>
-//	<xs:element name="cfResPublId" type="cfId__Type"/>
-//	<xs:element name="cfResPublDate" type="xs:date" minOccurs="0"/>
-//	<xs:element name="cfNum" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfVol" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfEdition" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfSeries" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfIssue" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfStartPage" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfEndPage" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfTotalPages" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfISBN" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfISSN" type="xs:string" minOccurs="0"/>
-//	<xs:element name="cfURI" type="xs:string" minOccurs="0"/>
-	
-	Element cerifCfResPub;
-	String topMdElementXPath="//*[local-name()='mods']";
-	
-	public ModsMetsMapping() {
-		
+public class ModsMetsMappingItImt extends ModsMetsMapping {
+
+	public ModsMetsMappingItImt() {
+		defaultLanguage="it";
+		topMdElementXPath="//*[local-name()='mdWrap' and @MDTYPE='MODS']/*[local-name()='xmlData']";
 	}
 	
 	@Override
@@ -72,18 +49,30 @@ public abstract class ModsMetsMapping extends CerifMapping{
 			if(subEl.getLocalName().equals("name")) {
 				String role=null;
 				String name=null;
+				String nameGiven=null;
+				String nameFamily=null;
 				Element roleTermEl = XmlUtil.getElementByTagNameWithParents(subEl, "role", "roleTerm");
 				if(roleTermEl!=null) {
 					role=roleTermEl.getTextContent();
 				}
-				Element namePartEl = XmlUtil.getElementByTagName(subEl, "namePart");
-				if(namePartEl!=null) {
-					name=namePartEl.getTextContent();
+				List<Element> nameParts = XmlUtil.elements(subEl, "namePart");
+
+				for(Element namePartEl: nameParts) {
+					String type = namePartEl.getAttribute("type");
+					if(type==null) {
+						name=namePartEl.getTextContent();
+					} else if(type.equals("family")) {
+						nameFamily=namePartEl.getTextContent();
+					} else if(type.equals("given")) {
+						nameGiven=namePartEl.getTextContent();
+					} else {
+						name=namePartEl.getTextContent();
+					}
 				}
 				if(role!=null && (role.equals("affiliation") || role.equals("department")))
 					createCerifCfOrgUnit(cfResPublId, name, role);
 				else
-					createCerifCfPers(cfResPublId, name, null, null, role);
+					createCerifCfPers(cfResPublId, name, nameGiven, nameFamily, role);
 			} else  if(subEl.getLocalName().equals("identifier")) {
 				String idType = subEl.getAttribute("type");
 				String idVal = subEl.getTextContent();
@@ -204,77 +193,4 @@ public abstract class ModsMetsMapping extends CerifMapping{
 			cerifCfResPub.appendChild(childs.get(i));
 		return cerifCfResPub;
 	}
-
-	 
-	protected void createCerifCfOrgUnit(String cfResPublId, String name, String role) {
-		Element elCfOrgUnit=XmlUtil.createElementNsIn(cerifParent, CERIF_NS, "CfOrgUnit");
-		
-		String cfOrgUnitId = String.valueOf(idGenerator.generate());
-		XmlUtil.createElementNsIn(elCfOrgUnit, CERIF_NS, "cfOrgUnitId", cfOrgUnitId);
-		Element cfNameEl = XmlUtil.createElementNsIn(elCfOrgUnit, CERIF_NS, "cfName", name);
-		cfNameEl.setAttribute("cfTrans", "o");
-		cfNameEl.setAttribute("cfLangCode", defaultLanguage);
-			
-		Element elCfOrgUnitResPubl=XmlUtil.createElementNsIn(cerifCfResPub, CERIF_NS, "cfOrgUnit_ResPubl");
-		XmlUtil.createElementNsIn(elCfOrgUnitResPubl, CERIF_NS, "cfOrgUnitId", cfOrgUnitId);
-		XmlUtil.createElementNsIn(elCfOrgUnitResPubl, CERIF_NS, "cfClassId", "49815870-1cfe-11e1-8bc2-0800200c9a66");
-		XmlUtil.createElementNsIn(elCfOrgUnitResPubl, CERIF_NS, "cfClassSchemeId", "b7135ad0-1d00-11e1-8bc2-0800200c9a66");
-//		XmlUtil.createElementNsIn(elCfOrgUnitResPubl, CERIF_NS, "cfClassSchemeId", "6b2b7d26-3491-11e1-b86c-0800200c9a66");
-	}
-	protected void createCerifCfPers(String cfResPublId, String name, String nameGiven, String nameFamily, String role) {
-		Element elCfPers=XmlUtil.createElementNsIn(cerifParent, CERIF_NS, "CfPers");
-		
-		String cfPersId = String.valueOf(idGenerator.generate());
-		XmlUtil.createElementNsIn(elCfPers, CERIF_NS, "cfPersId", cfPersId);
-		
-		Element elCfPersResPubl=cerifDoc.createElementNS(CERIF_NS, "cfPers_ResPubl");
-		cerifParent.appendChild(elCfPersResPubl);
-		
-		XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfPersId", cfPersId);
-		XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfResPubId", cfResPublId);
-		if (role!=null) {
-			if (role.equals("advisor") || role.equals("Orientador/supervisor")) {
-				XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfClassId", "6b2b7d22-3491-11e1-b86c-0800200c9a66");
-				XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfClassSchemeId", "6b2b7d24-3491-11e1-b86c-0800200c9a66");
-			} else if (role.equals("author")) {
-				XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfClassId", "49815870-1cfe-11e1-8bc2-0800200c9a66");
-				XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfClassSchemeId", "b7135ad0-1d00-11e1-8bc2-0800200c9a66");
-			} else if (role.equals("editor")) {
-				XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfClassId", "708b3df0-1cfe-11e1-8bc2-0800200c9a66");
-				XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfClassSchemeId", "b7135ad0-1d00-11e1-8bc2-0800200c9a66");
-			} else if (role.equals("affiliation")) {
-				throw new RuntimeException("affiliation should be mapped elsewhere");
-			} else {
-				System.out.println("WARN: Role not mapped: "+role);
-				role=null;
-			}
-		} 
-		if(role==null) {
-			XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfClassId", "e4d7b130-1cfd-11e1-8bc2-0800200c9a66");
-			XmlUtil.createElementNsIn(elCfPersResPubl, CERIF_NS, "cfClassSchemeId", "b7135ad0-1d00-11e1-8bc2-0800200c9a66");
-		}
-			
-		Element elCfPersName=XmlUtil.createElementNsIn(cerifParent, CERIF_NS, "cfPersName");
-		String elCfPersNameId = String.valueOf(idGenerator.generate());
-		XmlUtil.createElementNsIn(elCfPersName, CERIF_NS, "cfPersNameId", elCfPersNameId);
-		if(name!=null && name.contains(",")) {
-			XmlUtil.createElementNsIn(elCfPersName, CERIF_NS, "cfFamilyNames", name.substring(0, name.indexOf(',')).trim());
-			XmlUtil.createElementNsIn(elCfPersName, CERIF_NS, "cfFirstNames", name.substring(name.indexOf(',')+1).trim());
-		} else if(name!=null)
-			XmlUtil.createElementNsIn(elCfPersName, CERIF_NS, "cfFirstNames", name.trim());
-		else {
-			if(nameFamily!=null)
-				XmlUtil.createElementNsIn(elCfPersName, CERIF_NS, "cfFamilyNames", nameFamily.trim());
-			if(nameGiven!=null)
-				XmlUtil.createElementNsIn(elCfPersName, CERIF_NS, "cfFirstNames", nameGiven.trim());			
-		}
-
-		Element elCfPersNamePers=XmlUtil.createElementNsIn(cerifParent, CERIF_NS, "cfPersName_Pers");
-		
-		XmlUtil.createElementNsIn(elCfPersNamePers, CERIF_NS, "cfPersNameId", elCfPersNameId);
-		XmlUtil.createElementNsIn(elCfPersNamePers, CERIF_NS, "cfPersId", cfPersId);
-		XmlUtil.createElementNsIn(elCfPersNamePers, CERIF_NS, "cfClassId", "bdcf213d-df3e-4af4-a2ea-69ca26e98cd4");
-		XmlUtil.createElementNsIn(elCfPersNamePers, CERIF_NS, "cfClassSchemeId", "7375609d-cfa6-45ce-a803-75de69abe21f");
-	}
-
 }

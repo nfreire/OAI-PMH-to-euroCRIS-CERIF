@@ -8,6 +8,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -98,13 +99,18 @@ public class XmlUtil {
      *            the name of the child elements
      * @return An Iterable for the Element's children, with a particular name, of a node
      */
-    public static Iterable<Element> elements(Element n, String elementName) {
-        NodeList subNodes = n.getElementsByTagName(elementName);
+    public static List<Element> elements(Element n, String elementName) {
+//        NodeList subNodes = n.getElementsByTagName(elementName);
+        NodeList subNodes = n.getChildNodes();
         int sz = subNodes.getLength();
         ArrayList<Element> elements = new ArrayList<Element>(sz);
         for (int idx = 0; idx < sz; idx++) {
             Node node = subNodes.item(idx);
-            elements.add((Element)node);
+            if(node instanceof Element) {
+            	Element el=(Element) node;
+            	if(el.getLocalName().equals(elementName))
+            		elements.add((Element)node);
+            }
         }
         return elements;
     }

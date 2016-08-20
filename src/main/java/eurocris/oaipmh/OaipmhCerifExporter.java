@@ -25,6 +25,7 @@ public class OaipmhCerifExporter {
 	}
 	
 	public static void main(String[] args) {
+		HttpsUtil.initSslTrustingHostVerifier();
 		File repository=new File(args==null || args.length<1 ? "repository" : args[0]);
 		if(!repository.exists())
 			repository.mkdirs();
