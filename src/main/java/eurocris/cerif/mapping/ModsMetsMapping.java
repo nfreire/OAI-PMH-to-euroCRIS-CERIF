@@ -19,7 +19,7 @@ import eurocris.oaipmh.XmlUtil;
  *	General mappings to CERIF applicable to most uses of MODS.
  *  This class is adapted to the case when MODS is embedded in METS metadata
  */
-public abstract class ModsMetsMapping extends CerifMapping{
+public abstract class ModsMetsMapping extends XmlCerifMapping{
 	public static final Pattern URL_PATTERN=Pattern.compile("^(https?:\\/\\/)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([\\/\\w \\.-]*)*\\/?$");
 	public static final String[] CF_RES_PUBL_ELEMENTS_ORDER=new String[] {
 			"cfResPublDate", "cfNum", "fVol", 

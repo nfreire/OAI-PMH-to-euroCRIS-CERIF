@@ -12,17 +12,14 @@ import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import eurocris.cerif.AbstractCerifExporter;
 import eurocris.cerif.mapping.IdGenerator;
 /**
  * @author Nuno
  *
  * Exports an OAI-PMH data source into a file based XML repository
  */
-public class OaipmhCerifExporter {
-	private static final Properties XML_OUTPUT_OPTIONS=new Properties();
-	static {
-		XML_OUTPUT_OPTIONS.put("indent", "yes");
-	}
+public class OaipmhCerifExporter extends AbstractCerifExporter {
 	
 	public static void main(String[] args) {
 		HttpsUtil.initSslTrustingHostVerifier();
@@ -78,18 +75,4 @@ public class OaipmhCerifExporter {
 		}
 	}
 	
-	
-	protected static File getRepositoryFile(File repositoryParentFolder,  String recId) {
-		try {
-			int hash=Math.abs(recId.hashCode());
-			String midfolder=String.valueOf(hash % 100);
-			File midFolderFile = new File(repositoryParentFolder, midfolder);
-			if(!midFolderFile.exists())
-				midFolderFile.mkdirs();
-			File recFile=new File(midFolderFile, URLEncoder.encode(recId,"UTF-8")+".xml");
-			return recFile;
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		}
-	}
 }

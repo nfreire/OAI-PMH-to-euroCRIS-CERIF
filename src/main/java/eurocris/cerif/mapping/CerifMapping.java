@@ -9,7 +9,7 @@ import eurocris.oaipmh.XmlUtil;
 /**
  * @author Nuno
  *
- *	Base implementatio of a mapping to CERIF
+ *	Base implementation of a mapping to CERIF
  */
 public abstract class CerifMapping {
 	public static final String CERIF_NS="urn:xmlns:org:eurocris:cerif-1.5-1";
@@ -29,8 +29,6 @@ public abstract class CerifMapping {
 		this.idGenerator = idGenerator;
 	}
 	
-	public abstract Element convert(String cfResPublId, Element sourceRoot);
-	
 	public Document getCerifDom() {
 		return cerifDoc;
 	}
@@ -41,7 +39,10 @@ public abstract class CerifMapping {
 		cerifDoc.appendChild(cerifParent);
 	}
 	
-	
+
+	public void setDefaultLanguage(String defaultLanguage) {
+		this.defaultLanguage=defaultLanguage;
+	}
 
 	protected void createCfMLangStringType(String elementName, String subElementName, String value, String cfResPublId, boolean translated, String langTag) {
 		Element cfResPublTitleEl=XmlUtil.createElementNsIn(cerifParent, CERIF_NS, elementName);

@@ -3,7 +3,7 @@ package eurocris.oaipmh;
 import java.util.ArrayList;
 import java.util.List;
 
-import eurocris.cerif.mapping.CerifMapping;
+import eurocris.cerif.mapping.XmlCerifMapping;
 
 /**
  * @author Nuno
@@ -17,9 +17,9 @@ public class OaipmhSource {
     List<String> sets=new ArrayList<String>();
     List<String> recordIdentifiers=new ArrayList<String>();
     String metadataPrefix;
-    CerifMapping mapping;
+    XmlCerifMapping mapping;
     
-	public OaipmhSource(String baseUrl, String metadataPrefix, CerifMapping mapping) {
+	public OaipmhSource(String baseUrl, String metadataPrefix, XmlCerifMapping mapping) {
 		super();
 		this.baseUrl = baseUrl;
 		this.metadataPrefix = metadataPrefix;
@@ -51,11 +51,11 @@ public class OaipmhSource {
 		this.metadataPrefix = metadataPrefix;
 	}
 
-	public CerifMapping getMapping() {
+	public XmlCerifMapping getMapping() {
 		return mapping;
 	}
 
-	public void setMapping(CerifMapping mapping) {
+	public void setMapping(XmlCerifMapping mapping) {
 		this.mapping = mapping;
 	}
     
